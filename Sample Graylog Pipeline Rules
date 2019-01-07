@@ -1,0 +1,33 @@
+Pipeline Name: [IDS] Packet Capture Link
+
+Stage 0: At least one of the rules on this stage matches the message
+Rule "[IDS] SensorID"
+when
+	$message.dvchost == "<IDS Sensor Name>" 	 # Enter the IDS Sensor Name
+then
+	set_field("Alert_Sensor_ID", "<sensor_ID>"); # Enter the appropriate sensor ID associated with above IDS Sensor Name. You can get this from McAfee NSM
+end
+
+
+Stage 1: At least one of the rules on this stage matches the message
+rule "[IDS] Packet Capture Link"
+when
+	is_not_null($message.Alert_Sensor_ID)
+then
+    let sensor_id = to_string($message.Alert_Sensor_ID);
+    let sensor_alert_id = to_string($message.Alert_ID);
+    let link_first_part = "https://<NSM Hostname>/intruvert/action/AlertLogAction?userAction=getPacketCapture&sensorId=";
+    let link_first_part_sensor_id = concat(link_first_part,sensor_id);
+    let link_first_part_concat = concat(link_first_part_sensor_id,"&sensorAlertUUID=");
+    let link_first_part_alert_id = concat(link_first_part_concat, sensor_alert_id);
+    let link_second_part = "&topMenuName=INVESTIGATIONX&topMenuName=INVESTIGATIONX&secondMenuName=Threat%20Explorer&thirdMenuName=Threat%20Explorer&description=Threat%20Explorer&helpId=GUID-46AF9550-083C-4331&resourceName=%2FMy%20Company%3A0%2FInvestigation%3A0&shortResourceName=%2FInvestigation%3A0&domainName=%2FMy%20Company%3A0&currentDomainName=%2FMy%20Company%3A0&domain=false&vidsId=0&sensorName=&accessRight=fullaccess&breadcrumb=%2FMy%20Company%20%3E%20Threat%20Explorer&moduleId=13&isRootDomain=true&selectedDomain=%2FMy%20Company%3A0&OWASP_CSRFTOKEN=OACG-08MX-UJOT-64AO&OWASP_CSRFTOKEN=OACG&nsmVersion=8.3.7.52&nsmVersion=8.3.7.52&Module_id=13&csrftokenname=OWASP_CSRFTOKEN&includeChildDomains=false&extjsDebugEnable=false&localeLnStr=";
+    let link_final = concat(link_first_part_alert_id, link_second_part);
+    set_field("Packet_Capture_Link", link_final);
+	
+end
+
+
+
+Note:
+How to get this PCAP link from McAfee NSM?
+Use Proxy Interceptor in Burp tool while accessing PCAP link in NSM GUI. Please note that it is being used in Stage 1
